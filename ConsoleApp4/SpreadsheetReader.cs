@@ -79,7 +79,7 @@ public class SpreadsheetReader
          for (int j = 0; j < columns; j++)
          {
              string address = GetCellAddress(i, j);
-             var cell = _cellsByAddress[address];
+             ICell cell = _cellsByAddress[address];
              string displayValue = cell.GetType() == _cellTypeFactory.GetCellType(CellType.String) 
                  ? $"\"{cell.GetValue()}\""
                  : cell.GetValue()?.ToString() ?? "";
@@ -109,9 +109,9 @@ public class SpreadsheetReader
         Console.WriteLine();
 
         // Вивід даних таблиці
-        foreach (var row in rawData)
+        foreach (string[] row in rawData)
         {
-            foreach (var value in row)
+            foreach (string value in row)
             {
                 Console.Write($"{value,-15}");
             }

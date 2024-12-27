@@ -43,9 +43,9 @@ public class FormulaCell : ICell
             throw new ArgumentException($"Circular reference detected at {Address}");
 
         visitedCells.Add(Address);
-        var formula = RawValue.TrimStart('=');
-        var cellAddressPattern = @"[A-Z]\d+";
-        var matches = Regex.Matches(formula, cellAddressPattern);
+        string formula = RawValue.TrimStart('=');
+        string cellAddressPattern = @"[A-Z]\d+";
+        MatchCollection matches = Regex.Matches(formula, cellAddressPattern);
 
         foreach (Match match in matches)
         {
@@ -59,7 +59,7 @@ public class FormulaCell : ICell
             if (referencedCell is FormulaCell formulaCell && !formulaCell.IsProcessed)
                 formulaCell.ProcessFormula(visitedCells);
 
-            var cellValue = referencedCell.GetValue()?.ToString() ?? "0";
+            string cellValue = referencedCell.GetValue()?.ToString() ?? "0";
             formula = formula.Replace(cellAddress, cellValue);
         }
 
