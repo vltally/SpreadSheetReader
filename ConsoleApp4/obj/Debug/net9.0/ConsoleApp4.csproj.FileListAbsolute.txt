@@ -22,3 +22,4 @@ C:\Users\User\Desktop\ConsoleApp4\ConsoleApp4\bin\Debug\net9.0\SixLabors.Fonts.d
 C:\Users\User\Desktop\ConsoleApp4\ConsoleApp4\bin\Debug\net9.0\System.IO.Packaging.dll
 C:\Users\User\Desktop\ConsoleApp4\ConsoleApp4\obj\Debug\net9.0\ConsoleApp4.csproj.AssemblyReference.cache
 C:\Users\User\Desktop\ConsoleApp4\ConsoleApp4\obj\Debug\net9.0\ConsoleA.3A898A1B.Up2Date
+C:\Users\User\Desktop\ConsoleApp4\ConsoleApp4\obj\Debug\net9.0\ConsoleApp4.sourcelink.json

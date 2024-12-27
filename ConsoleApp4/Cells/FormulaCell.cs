@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using ConsoleApp4.Lib.StringProcessor;
 
 namespace ConsoleApp4.Cells;
 
@@ -65,5 +66,10 @@ public class FormulaCell : ICell
         visitedCells.Remove(Address);
         processedFormula = formula;
         IsProcessed = true;
+    }
+
+    public void EvaluateFormula(StringProcessor stringProcessor)
+    {
+        processedFormula = stringProcessor.ProcessString(processedFormula).ToString();
     }
 }

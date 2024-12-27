@@ -1,4 +1,5 @@
 ﻿using ConsoleApp4.Cells;
+using ConsoleApp4.Lib.StringProcessor;
 
 namespace ConsoleApp4;
 
@@ -6,6 +7,7 @@ namespace ConsoleApp4;
 
 public class SpreadsheetReader
 {
+    private StringProcessor _stringProcessor;
     private readonly Dictionary<string, ICell> _cellsByAddress;
     private readonly int columns;
     private List<string[]> rawData;
@@ -17,6 +19,11 @@ public class SpreadsheetReader
         _cellsByAddress = new Dictionary<string, ICell>();
         rawData = new List<string[]>();
     }
+
+    public void AddStringProcessor(StringProcessor stringProcessor)
+    {
+        _stringProcessor = stringProcessor;
+    }
     
     public void ReadData()
     {
@@ -27,10 +34,10 @@ public class SpreadsheetReader
             input = Console.ReadLine();
 
             if (string.IsNullOrWhiteSpace(input))
-            {
-                if (rawData.Count > 0) break;
-                continue;
-            }
+                break;
+            
+            if (rawData.Count > 0) break;
+            
 
             string[] values = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (values.Length != columns)
@@ -43,29 +50,13 @@ public class SpreadsheetReader
             Console.Clear();
             DisplayRawData();
         }
-
+        
         InitializeCells();
     }
     
- // public void DisplayTable1()
- //    {
- //        int rows = rawData.Count;
- //        for (int i = 0; i < rows; i++)
- //        {
- //            for (int j = 0; j < columns; j++)
- //            {
- //                string address = GetCellAddress(i, j);
- //                var cell = _cellsByAddress[address];
- //                string displayValue = cell.GetType() == _cellTypeFactory.GetCellType(CellType.String) 
- //                    ? $"\"{cell.GetValue()}\""
- //                    : cell.GetValue()?.ToString() ?? "";
- //                Console.Write($"{displayValue}\t");
- //            }
- //            Console.WriteLine();
- //        }
- //    }
  public void DisplayProcessedData()
  {
+     Console.WriteLine("---------------------------------");
      int rows = rawData.Count;
 
      if (rows == 0)
@@ -151,28 +142,28 @@ public class SpreadsheetReader
     
     private ICell CreateCell(string address, string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(value) || (value.StartsWith("=") && value.Length ==1 ))
             return new EmptyCell(address);
 
         if (value.StartsWith("\"") && value.EndsWith("\""))
             return new StringCell(address, value);
 
-        if (value.StartsWith("="))
+        if (value.StartsWith("=") && value.Length > 1)
             return new FormulaCell(address, value, _cellsByAddress);
 
         if (double.TryParse(value, out _))
             return new NumberCell(address, value);
 
-        throw new ArgumentException($"Invalid value format in cell {address}: {value}");
+        throw new ArgumentException($"Invalid value format in cell {address}: {value}, should be \"{value}\"");
     }
     
     public void ProcessAllFormulas()
     {
-        var formulaCells = _cellsByAddress.Values
+        IEnumerable<FormulaCell> formulaCells = _cellsByAddress.Values
             .Where(c => c.GetType() == _cellTypeFactory.GetCellType(CellType.Formula) )
             .Cast<FormulaCell>();
 
-        foreach (var cell in formulaCells)
+        foreach (FormulaCell cell in formulaCells)
         {
             if (!cell.IsProcessed)
             {
@@ -188,5 +179,14 @@ public class SpreadsheetReader
         }
         Console.WriteLine("\nProcessed spreadsheet:");
         DisplayProcessedData();
+        
+        foreach (FormulaCell cell in formulaCells)
+        {
+            cell.EvaluateFormula(_stringProcessor);
+        }
+        
+        DisplayProcessedData();
     }
+
+  
 }
