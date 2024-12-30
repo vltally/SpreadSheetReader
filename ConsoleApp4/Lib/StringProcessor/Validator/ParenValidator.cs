@@ -38,7 +38,7 @@ public class ParenValidator : IValidator
                 }
                 else if (c == ')')
                 {
-                    // Закриваюча дужка
+                     
                     if (stack.Count == 0)
                     {
                         throw new ArgumentException(UnpairedClosingBracket);

@@ -35,8 +35,7 @@ public class StringProcessor
         }
         catch (Exception ex)
         {
-            Console.WriteLine("An error occurred while evaluating the expression:");
-            Console.WriteLine(ex.Message);
+            throw ex;
         }
 
         return 0;

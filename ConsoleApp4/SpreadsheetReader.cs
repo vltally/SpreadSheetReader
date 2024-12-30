@@ -11,13 +11,14 @@ public class SpreadsheetReader
     private readonly Dictionary<string, ICell> _cellsByAddress;
     private readonly int columns;
     private List<string[]> rawData;
-    private readonly CellTypeFactory _cellTypeFactory = new CellTypeFactory();
+    private readonly HashSet<int> encounteredErrors;
     
     public SpreadsheetReader(int columns)
     {
         this.columns = columns;
         _cellsByAddress = new Dictionary<string, ICell>();
         rawData = new List<string[]>();
+        encounteredErrors = new HashSet<int>();
     }
 
     public void AddStringProcessor(StringProcessor stringProcessor)
@@ -35,11 +36,8 @@ public class SpreadsheetReader
 
             if (string.IsNullOrWhiteSpace(input))
                 break;
-            
-            if (rawData.Count > 0) break;
-            
 
-            string[] values = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string[] values = input.Split('\t', StringSplitOptions.RemoveEmptyEntries);
             if (values.Length != columns)
             {
                 Console.WriteLine($"Error: Expected {columns} values, got {values.Length}");
@@ -50,12 +48,13 @@ public class SpreadsheetReader
             Console.Clear();
             DisplayRawData();
         }
-        
+    
         InitializeCells();
     }
     
  public void DisplayProcessedData()
  {
+     Console.WriteLine("\nProcessed spreadsheet:");
      Console.WriteLine("---------------------------------");
      int rows = rawData.Count;
 
@@ -65,29 +64,49 @@ public class SpreadsheetReader
          return;
      }
 
-     // Формування заголовків таблиці
+     
      for (int i = 0; i < columns; i++)
      {
          char columnName = (char)('A' + i); // A, B, C, ...
-         Console.Write($"{columnName,-15}"); // Виводимо заголовок стовпця з вирівнюванням
-     }
+         Console.Write($"{columnName,-15}"); }
      Console.WriteLine();
 
-     // Вивід даних таблиці
+      
      for (int i = 0; i < rows; i++)
      {
          for (int j = 0; j < columns; j++)
          {
              string address = GetCellAddress(i, j);
              ICell cell = _cellsByAddress[address];
-             string displayValue = cell.GetType() == _cellTypeFactory.GetCellType(CellType.String) 
-                 ? $"\"{cell.GetValue()}\""
-                 : cell.GetValue()?.ToString() ?? "";
-             
+             string displayValue;
+
+             if (cell.HasError)
+             {
+                 displayValue = ErrorCodes.FormatError(cell.ErrorCode.Value);
+             }
+             else if (cell is StringCell)
+             {
+                 displayValue = $"\"{cell.GetValue()}\"";
+             }
+             else
+             {
+                 displayValue = cell.GetValue()?.ToString() ?? "";
+             }
+        
              Console.Write($"{displayValue,-15}");
          }
          Console.WriteLine();
      }
+     
+     if (encounteredErrors.Any())
+     {
+         Console.WriteLine("\nEncountered errors:");
+         foreach ((int code, string message) in ErrorCodes.GetActiveErrors(encounteredErrors))
+         {
+             Console.WriteLine($"Error#{code}: {message}");
+         }
+     }
+     
  }
 
 
@@ -100,7 +119,7 @@ public class SpreadsheetReader
             return;
         }
 
-        // Формування заголовків таблиці
+         
         for (int i = 0; i < columns; i++)
         {
             char columnName = (char)('A' + i); // A, B, C, ...
@@ -108,7 +127,7 @@ public class SpreadsheetReader
         }
         Console.WriteLine();
 
-        // Вивід даних таблиці
+         
         foreach (string[] row in rawData)
         {
             foreach (string value in row)
@@ -142,47 +161,39 @@ public class SpreadsheetReader
     
     private ICell CreateCell(string address, string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || (value.StartsWith("=") && value.Length ==1 ))
-            return new EmptyCell(address);
+        if (string.IsNullOrWhiteSpace(value))
+            return new StringCell(address, string.Empty);
 
-        if (value.StartsWith("\"") && value.EndsWith("\""))
-            return new StringCell(address, value);
-
-        if (value.StartsWith("=") && value.Length > 1)
+        if (value.StartsWith("="))
             return new FormulaCell(address, value, _cellsByAddress);
 
+         
         if (double.TryParse(value, out _))
             return new NumberCell(address, value);
 
-        throw new ArgumentException($"Invalid value format in cell {address}: {value}, should be \"{value}\"");
+         
+        return new StringCell(address, value);
     }
+    
+    
     
     public void ProcessAllFormulas()
     {
-        IEnumerable<FormulaCell> formulaCells = _cellsByAddress.Values
-            .Where(c => c.GetType() == _cellTypeFactory.GetCellType(CellType.Formula) )
-            .Cast<FormulaCell>();
+        List<FormulaCell> formulaCells = _cellsByAddress.Values
+            .OfType<FormulaCell>()
+            .ToList();
 
         foreach (FormulaCell cell in formulaCells)
         {
             if (!cell.IsProcessed)
             {
-                try
-                {
-                    cell.ProcessFormula();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing {cell.Address}: {ex.Message}");
-                }
+                cell.ProcessFormula(encounteredErrors: encounteredErrors);
             }
         }
-        Console.WriteLine("\nProcessed spreadsheet:");
-        DisplayProcessedData();
-        
+
         foreach (FormulaCell cell in formulaCells)
         {
-            cell.EvaluateFormula(_stringProcessor);
+            cell.EvaluateFormula(_stringProcessor, encounteredErrors);
         }
         
         DisplayProcessedData();

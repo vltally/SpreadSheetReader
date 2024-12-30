@@ -6,7 +6,8 @@ public interface ICell
     string RawValue { get; }
     object GetValue();
     void SetValue(string value);
-   // CellType GetType();
     bool IsProcessed { get; set; }
+    bool HasError { get; }
+    int? ErrorCode { get; }
 }
 
