@@ -52,7 +52,7 @@ public class SpreadsheetReader
         InitializeCells();
     }
     
- public void DisplayProcessedData()
+    public void DisplayProcessedData()
  {
      Console.WriteLine("\nProcessed spreadsheet:");
      Console.WriteLine("---------------------------------");
@@ -108,8 +108,50 @@ public class SpreadsheetReader
      }
      
  }
+    
+     public void DisplayIntermediateData()
+ {
+     Console.WriteLine("\nIntermediate data processing:");
+     Console.WriteLine("---------------------------------");
+   
+     int rows = rawData.Count;
+   
+     // Заголовки
+     for (int i = 0; i < columns; i++)
+     {
+         char columnName = (char)('A' + i);
+         Console.Write($"{columnName,-15}");
+     }
+     Console.WriteLine();
 
+     // Дані
+     for (int i = 0; i < rows; i++)
+     {
+         for (int j = 0; j < columns; j++)
+         {
+             string address = GetCellAddress(i, j);
+             ICell cell = _cellsByAddress[address];
+             string displayValue;
 
+             if (cell is FormulaCell)
+             {
+                 displayValue = ((FormulaCell)cell).GetProcessedFormula();
+             }
+             else if (cell is StringCell)
+             {
+                 displayValue = $"\"{cell.GetValue()}\"";
+             }
+             else
+             {
+                 displayValue = cell.GetValue()?.ToString() ?? "";
+             }
+           
+             Console.Write($"{displayValue,-15}");
+         }
+         Console.WriteLine();
+     }
+ }
+ 
     
     public void DisplayRawData()
     {
@@ -190,7 +232,9 @@ public class SpreadsheetReader
                 cell.ProcessFormula(encounteredErrors: encounteredErrors);
             }
         }
-
+        
+        DisplayIntermediateData();
+        
         foreach (FormulaCell cell in formulaCells)
         {
             cell.EvaluateFormula(_stringProcessor, encounteredErrors);

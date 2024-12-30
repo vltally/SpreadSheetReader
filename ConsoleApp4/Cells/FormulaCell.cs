@@ -8,6 +8,11 @@ public class FormulaCell : BaseCell
     private string processedFormula;
     private readonly Dictionary<string, ICell> cellsByAddress;
 
+    public string GetProcessedFormula()
+    {
+        return processedFormula;
+    }
+    
     public FormulaCell(string address, string value, Dictionary<string, ICell> cellsByAddress) 
         : base(address)
     {
@@ -80,6 +85,7 @@ public class FormulaCell : BaseCell
         visitedCells.Remove(Address);
         processedFormula = formula;
         IsProcessed = true;
+        
     }
 
     public void EvaluateFormula(StringProcessor stringProcessor, HashSet<int> encouunteredErrors = null)
